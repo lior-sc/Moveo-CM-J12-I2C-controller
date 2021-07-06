@@ -1,1 +1,1 @@
-# ardurobot-J12-I2C-controller
+# Soltrex-CM-J12-I2C-controller
