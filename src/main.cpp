@@ -48,15 +48,19 @@ byte inposState = false;
 Stepper J1, J2;
 
 // Misc functions
-double getSerialfloat(String str)
+void emptySerialBuffer(int iterations)
 {
-	for (int i = 0; i > 1000; i++)
+	for (int i = 0; i < iterations; i++)
 	{
 		Serial.read();
 	}
+}
+double getSerialfloat(String str)
+{
+	emptySerialBuffer(100);
 	Serial.println(str);
 	while (!Serial.available());
-	return (double)Serial.parseFloat();
+	return (double) Serial.parseFloat();
 }
 
 // Stepper movement functions
@@ -138,6 +142,64 @@ void moveSystemJoints(double t1, double t2)
 }
 
 // I2C functions
+
+void process_cmd(int size)
+{
+	//Serial.println("hey");
+	byte buff[10] = { 0 };
+	int _cmd_type;
+	int _cmd_value[2];
+	double _double_cmd_value[2];
+
+	Wire.readBytes(buff, size);
+
+	_cmd_type = buff[0] << 8 | buff[1];
+
+	// _cmdValue[0] = buff[2] << 8 | buff[3];
+	// _cmdValue[1] = buff[4] << 8 | buff[5];
+	// _cmdValue[2] = buff[6] << 8 | buff[7];
+
+	for (int i=0;i<2;i++)
+	{
+		int index = (i+1) * 2 ;
+		_cmd_value[i] = buff[index] << 8 | buff[index+1];
+		_double_cmd_value[i] = ((double)_cmd_value[i]) / 1000;
+	}
+
+
+	switch (_cmd_type)
+	{
+	default:
+		if(DEBUG)
+		{
+			Serial.println("no such option. enter 1 in cmd_type");
+		}
+		break;
+	case 1:
+		bool _error_flag = false;
+		
+		for(int i=0;i<2;i++)
+		{
+			if(abs(_double_cmd_value[i])>(2*PI))
+			{
+				_error_flag=true;
+			}
+			else;
+		}
+		
+		if(_error_flag ==true)
+		{
+			break;
+		}
+		else
+		{
+			J1.inputSetpointRad(_double_cmd_value[0]);
+			J2.inputSetpointRad(_double_cmd_value[1]);
+		}
+
+		break;
+	}
+}
 void processCmd(int size)
 {
 	//Serial.println("hey");
@@ -176,7 +238,7 @@ void WireSetup()
 {
 	Wire.begin(0x02);
 	Wire.onRequest(SendInPosFlag);
-	Wire.onReceive(processCmd);
+	Wire.onReceive(process_cmd);
 }
 
 // Main loop functions
@@ -220,8 +282,8 @@ void setup(){
 void loop(){
 	if (DEBUG == true)
 	{
-		demoLoop();
-		//TestLoop();
+		//demoLoop();
+		TestLoop();
 	}
 	else
 	{
