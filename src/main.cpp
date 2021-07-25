@@ -36,6 +36,8 @@
 #define REGULAR_DIR				1
 #define INVERTED_DIR			0
 
+#define CMD_TYPE_MOVE			1
+
 
 /// Joint variables
 int J2_EN[2] = { J2R_EN_PIN , J2L_EN_PIN };
@@ -145,28 +147,21 @@ void moveSystemJoints(double t1, double t2)
 
 void process_cmd(int size)
 {
-	//Serial.println("hey");
-	byte buff[10] = { 0 };
-	int _cmd_type;
-	int _cmd_value[2];
-	double _double_cmd_value[2];
+	// The buffers in the message received are arranged in Big Endian configuration (MSB first)
 
-	Wire.readBytes(buff, size);
+	uint8_t buff[5];
+	uint8_t _cmd_type;
+	double _cmd_value[2];
 
-	_cmd_type = buff[0] << 8 | buff[1];
+	Wire.readBytes(buff, 5);
 
-	// _cmdValue[0] = buff[2] << 8 | buff[3];
-	// _cmdValue[1] = buff[4] << 8 | buff[5];
-	// _cmdValue[2] = buff[6] << 8 | buff[7];
+	_cmd_type = buff[0];
 
-	for (int i=0;i<2;i++)
+	for(int i=0;i<2;i++)
 	{
-		int index = (i+1) * 2 ;
-		_cmd_value[i] = buff[index] << 8 | buff[index+1];
-		_double_cmd_value[i] = ((double)_cmd_value[i]) / 1000;
+		int16_t tmp = buff[2*i + 1] << 8 | buff[2*i + 2];
+		_cmd_value[i] = (double)tmp / 1000;
 	}
-
-
 	switch (_cmd_type)
 	{
 	default:
@@ -176,68 +171,29 @@ void process_cmd(int size)
 		}
 		break;
 	case 1:
-		bool _error_flag = false;
-		
 		for(int i=0;i<2;i++)
 		{
-			if(abs(_double_cmd_value[i])>(2*PI))
+			if(abs(_cmd_value[i])>(2*PI))
 			{
-				_error_flag=true;
+				Serial.println("Abs value of joints is too high (>2*PI)");
+				return;
 			}
 			else;
 		}
-		
-		if(_error_flag ==true)
-		{
-			break;
-		}
-		else
-		{
-			J1.inputSetpointRad(_double_cmd_value[0]);
-			J2.inputSetpointRad(_double_cmd_value[1]);
-		}
-
+		J1.inputSetpointRad(_cmd_value[0]);
+		J2.inputSetpointRad(_cmd_value[1]);
 		break;
 	}
 }
-void processCmd(int size)
+void SendFlag()
 {
-	//Serial.println("hey");
-	byte buff[10] = { 0 };
-	int cmdType;
-	int cmdValue[2];
-
-	Wire.readBytes(buff, size);
-
-	cmdType = buff[0] << 8 | buff[1];
-
-	cmdValue[0] = buff[2] << 8 | buff[3];
-	cmdValue[1] = buff[4] << 8 | buff[5];
-
-	switch (cmdType)
-	{
-	default:
-		if(DEBUG)
-		{
-			Serial.println("no such option");
-		}
-		break;
-	case 1:
-		J1.inputSetpointRad((double)cmdValue[0]);
-		J2.inputSetpointRad((double)cmdValue[1]);
-		break;
-	}
-
-}
-void SendInPosFlag()
-{
-	byte package[1] = { inposState };
-	Wire.write(package, 1);
+	uint8_t package = 5;
+	Wire.write(package);
 }
 void WireSetup()
 {
 	Wire.begin(0x02);
-	Wire.onRequest(SendInPosFlag);
+	Wire.onRequest(SendFlag);
 	Wire.onReceive(process_cmd);
 }
 
