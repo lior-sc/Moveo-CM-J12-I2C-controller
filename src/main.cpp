@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include "TrapezStepper.h"
 
-#define DEBUG			      true
+#define DEBUG			      	false
 
 // Pin definitions
 #define J1_EN_PIN		    	2
@@ -64,6 +64,17 @@ double getSerialfloat(String str)
 	while (!Serial.available());
 	return (double) Serial.parseFloat();
 }
+void blink_led(int times, unsigned long int dt)
+{
+  for(int i=0;i<times;i++)
+  {
+    digitalWrite(13,HIGH);
+    delay(dt);
+    digitalWrite(13,LOW);
+    delay(dt);
+  }
+}
+
 
 // Stepper movement functions
 void moveJ1(double t1)
@@ -148,7 +159,7 @@ void moveSystemJoints(double t1, double t2)
 void process_cmd(int size)
 {
 	// The buffers in the message received are arranged in Big Endian configuration (MSB first)
-
+	blink_led(3,50);
 	uint8_t buff[5];
 	uint8_t _cmd_type;
 	double _cmd_value[2];
@@ -227,6 +238,7 @@ void demoLoop()
 
 // Define some steppers and the pins the will use
 void setup(){
+	pinMode(13,OUTPUT);
 	if (DEBUG)
 		Serial.begin(115200);
 
