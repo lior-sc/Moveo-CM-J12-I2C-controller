@@ -64,7 +64,7 @@ double getSerialfloat(String str)
 	while (!Serial.available());
 	return (double) Serial.parseFloat();
 }
-void blink_led(int times, unsigned long int dt)
+void blink_led(int times, unsigned long dt)
 {
   for(int i=0;i<times;i++)
   {
@@ -159,7 +159,6 @@ void moveSystemJoints(double t1, double t2)
 void process_cmd(int size)
 {
 	// The buffers in the message received are arranged in Big Endian configuration (MSB first)
-	blink_led(3,50);
 	uint8_t buff[5];
 	uint8_t _cmd_type;
 	double _cmd_value[2];
@@ -203,7 +202,7 @@ void SendFlag()
 }
 void WireSetup()
 {
-	Wire.begin(0x02);
+	Wire.begin(2);
 	Wire.onRequest(SendFlag);
 	Wire.onReceive(process_cmd);
 }
@@ -238,10 +237,12 @@ void demoLoop()
 
 // Define some steppers and the pins the will use
 void setup(){
-	pinMode(13,OUTPUT);
 	if (DEBUG)
+	{
 		Serial.begin(115200);
-
+	}
+	
+	pinMode(13,OUTPUT);
 	StepperSetup();
 	WireSetup();
 }
