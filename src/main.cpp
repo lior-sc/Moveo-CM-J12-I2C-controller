@@ -43,7 +43,7 @@
 int J2_EN[2] = { J2R_EN_PIN , J2L_EN_PIN };
 int J2_DIR[2] = { J2R_DIR_PIN , J2L_DIR_PIN };
 int J2_STEP[2] = { J2R_STEPPIN , J2L_STEPPIN };
-bool J2_MOTOR_DIR[2] = { INVERTED_DIR, REGULAR_DIR };
+bool J2_MOTOR_DIR[2] = { REGULAR_DIR, INVERTED_DIR };
 
 byte inposState = false;
 
